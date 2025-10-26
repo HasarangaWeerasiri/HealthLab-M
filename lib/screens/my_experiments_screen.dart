@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import '../services/experiment_service.dart';
 import '../services/csv_export_service.dart';
+import '../providers/theme_provider.dart';
 import 'joined_experiment_screen.dart';
 import 'experiment_details_screen.dart';
 
@@ -245,60 +247,62 @@ class _MyExperimentsScreenState extends State<MyExperimentsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF212121),
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Header
-            Container(
-              decoration: const BoxDecoration(
-                color: Color(0xFF1A4D3B),
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(30),
-                  bottomRight: Radius.circular(30),
-                ),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Your Experiments',
-                      style: TextStyle(
-                        color: Color(0xFFE0E0E0),
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, _) {
+        return Scaffold(
+          backgroundColor: themeProvider.backgroundColor,
+          body: SafeArea(
+            child: Column(
+              children: [
+                // Header
+                Container(
+                  decoration: BoxDecoration(
+                    color: themeProvider.headerColor,
+                    borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(30),
+                      bottomRight: Radius.circular(30),
                     ),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Your Experiments',
+                          style: TextStyle(
+                            color: themeProvider.headerTextColor,
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                     const SizedBox(height: 20),
                     // Search Bar
                     Container(
                       decoration: BoxDecoration(
-                        color: const Color(0xFFA0C49D),
+                        color: themeProvider.searchBarColor,
                         borderRadius: BorderRadius.circular(25),
                       ),
                       child: TextField(
                         controller: _searchController,
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           hintText: 'Search experiments',
                           hintStyle: TextStyle(
-                            color: Color(0xFF616161),
+                            color: themeProvider.searchTextColor,
                             fontSize: 16,
                           ),
                           border: InputBorder.none,
-                          contentPadding: EdgeInsets.symmetric(
+                          contentPadding: const EdgeInsets.symmetric(
                             horizontal: 20,
                             vertical: 15,
                           ),
                           prefixIcon: Icon(
                             Icons.search,
-                            color: Color(0xFF616161),
+                            color: themeProvider.searchTextColor,
                           ),
                         ),
-                        style: const TextStyle(
-                          color: Color(0xFF212121),
+                        style: TextStyle(
+                          color: themeProvider.searchTextColor,
                           fontSize: 16,
                         ),
                       ),
@@ -346,33 +350,38 @@ class _MyExperimentsScreenState extends State<MyExperimentsScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               // Joined Experiments Section
-                              const Text(
-                                'Joined Experiments',
-                                style: TextStyle(
-                                  color: Color(0xFFE0E0E0),
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(height: 15),
-                              _joinedExperiments.isEmpty
-                                  ? Container(
-                                      height: 100,
-                                      width: double.infinity,
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFF1A4D3B),
-                                        borderRadius: BorderRadius.circular(15),
-                                      ),
-                                      child: const Center(
-                                        child: Text(
-                                          'No joined experiments yet',
-                                          style: TextStyle(
-                                            color: Color(0xFFE0E0E0),
-                                            fontSize: 16,
-                                          ),
+                              Consumer<ThemeProvider>(
+                                builder: (context, themeProvider, _) {
+                                  return Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Joined Experiments',
+                                        style: TextStyle(
+                                          color: themeProvider.textColor,
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold,
                                         ),
                                       ),
-                                    )
+                                      const SizedBox(height: 15),
+                                      _joinedExperiments.isEmpty
+                                          ? Container(
+                                              height: 100,
+                                              width: double.infinity,
+                                              decoration: BoxDecoration(
+                                                color: themeProvider.headerColor,
+                                                borderRadius: BorderRadius.circular(15),
+                                              ),
+                                              child: Center(
+                                                child: Text(
+                                                  'No joined experiments yet',
+                                                  style: TextStyle(
+                                                    color: themeProvider.textColor,
+                                                    fontSize: 16,
+                                                  ),
+                                                ),
+                                              ),
+                                            )
                                   : SizedBox(
                                       height: 360,
                                       child: ListView.builder(
@@ -387,36 +396,36 @@ class _MyExperimentsScreenState extends State<MyExperimentsScreen> {
                                         },
                                       ),
                                     ),
-                              const SizedBox(height: 30),
-                              
-                              // Created by You Section
-                              const Text(
-                                'Created by You',
-                                style: TextStyle(
-                                  color: Color(0xFFE0E0E0),
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(height: 15),
-                              _createdExperiments.isEmpty
-                                  ? Container(
-                                      height: 100,
-                                      width: double.infinity,
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFF1A4D3B),
-                                        borderRadius: BorderRadius.circular(15),
-                                      ),
-                                      child: const Center(
-                                        child: Text(
-                                          'No created experiments yet',
-                                          style: TextStyle(
-                                            color: Color(0xFFE0E0E0),
-                                            fontSize: 16,
-                                          ),
+                                      const SizedBox(height: 30),
+                                      
+                                      // Created by You Section
+                                      Text(
+                                        'Created by You',
+                                        style: TextStyle(
+                                          color: themeProvider.textColor,
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold,
                                         ),
                                       ),
-                                    )
+                                      const SizedBox(height: 15),
+                                      _createdExperiments.isEmpty
+                                          ? Container(
+                                              height: 100,
+                                              width: double.infinity,
+                                              decoration: BoxDecoration(
+                                                color: themeProvider.headerColor,
+                                                borderRadius: BorderRadius.circular(15),
+                                              ),
+                                              child: Center(
+                                                child: Text(
+                                                  'No created experiments yet',
+                                                  style: TextStyle(
+                                                    color: themeProvider.textColor,
+                                                    fontSize: 16,
+                                                  ),
+                                                ),
+                                              ),
+                                            )
                                   : SizedBox(
                                       height: 360,
                                       child: ListView.builder(
@@ -430,14 +439,20 @@ class _MyExperimentsScreenState extends State<MyExperimentsScreen> {
                                           );
                                         },
                                       ),
-                                    ),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              ),
                             ],
                           ),
                         ),
             ),
-          ],
-        ),
-      ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -479,15 +494,17 @@ class _MyExperimentsScreenState extends State<MyExperimentsScreen> {
       }
     }
 
-    return GestureDetector(
-      onTap: navigate,
-      child: Container(
-        width: 360,
-        margin: const EdgeInsets.only(right: 15),
-        decoration: BoxDecoration(
-          color: const Color(0xFF00432D),
-          borderRadius: BorderRadius.circular(24),
-        ),
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, _) {
+        return GestureDetector(
+          onTap: navigate,
+          child: Container(
+            width: 360,
+            margin: const EdgeInsets.only(right: 15),
+            decoration: BoxDecoration(
+              color: themeProvider.cardColor,
+              borderRadius: BorderRadius.circular(24),
+            ),
         child: Padding(
           padding: const EdgeInsets.all(24.0),
           child: Column(
@@ -499,8 +516,8 @@ class _MyExperimentsScreenState extends State<MyExperimentsScreen> {
                   experiment['title'] ?? 'Untitled Experiment',
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Color(0xFFEDFDDE),
+                  style: TextStyle(
+                    color: themeProvider.textSecondaryColor,
                     fontSize: 39,
                     fontWeight: FontWeight.w800,
                     height: 1.2,
@@ -541,8 +558,8 @@ class _MyExperimentsScreenState extends State<MyExperimentsScreen> {
                       experiment['description'] ?? 'No description available',
                       maxLines: 6,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Color(0xFFEDFDDE),
+                      style: TextStyle(
+                        color: themeProvider.textSecondaryColor,
                         fontSize: 15,
                         height: 1.4,
                       ),
@@ -563,8 +580,8 @@ class _MyExperimentsScreenState extends State<MyExperimentsScreen> {
                     ),
                     child: Text(
                       experiment['category'],
-                      style: const TextStyle(
-                        color: Color(0xFFEDFDDE),
+                      style: TextStyle(
+                        color: themeProvider.textSecondaryColor,
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                       ),
@@ -625,6 +642,8 @@ class _MyExperimentsScreenState extends State<MyExperimentsScreen> {
           ),
         ),
       ),
+        );
+      },
     );
   }
 }

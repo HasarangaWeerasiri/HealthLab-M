@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
+import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
+import '../providers/theme_provider.dart';
 import 'sign_in_screen.dart';
 import 'homepage_screen.dart';
 import 'create_experiments_screen.dart';
@@ -721,31 +723,33 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF201E1A),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF00432D),
-        title: const Text(
-          'Profile',
-          style: TextStyle(
-            color: Color(0xFFE6FDD8),
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFFE6FDD8)),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-      ),
-      body: _loading
-          ? const Center(
-              child: CircularProgressIndicator(
-                color: Color(0xFFE6FDD8),
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, _) {
+        return Scaffold(
+          backgroundColor: themeProvider.backgroundColor,
+          appBar: AppBar(
+            backgroundColor: themeProvider.headerColor,
+            title: Text(
+              'Profile',
+              style: TextStyle(
+                color: themeProvider.headerTextColor,
+                fontWeight: FontWeight.bold,
               ),
-            )
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
+            ),
+            leading: IconButton(
+              icon: Icon(Icons.arrow_back, color: themeProvider.headerTextColor),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ),
+          body: _loading
+              ? Center(
+                  child: CircularProgressIndicator(
+                    color: themeProvider.textColor,
+                  ),
+                )
+              : SingleChildScrollView(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Profile Picture and Username Section
@@ -969,13 +973,19 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                         ],
                         const SizedBox(height: 8),
                         // Email (optional, smaller text)
-                        Text(
-                          _userData['email'] ?? '',
-                          style: const TextStyle(
-                            color: Color(0xFFE6FDD8),
-                            fontSize: 14,
-                            fontWeight: FontWeight.w400,
-                          ),
+                        Consumer<ThemeProvider>(
+                          builder: (context, themeProvider, _) {
+                            return Text(
+                              _userData['email'] ?? '',
+                              style: TextStyle(
+                                color: themeProvider.isDarkMode 
+                                    ? const Color(0xFFE6FDD8) 
+                                    : const Color(0xFF1E4029),
+                                fontSize: 14,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            );
+                          },
                         ),
                       ],
                     ),
@@ -984,24 +994,26 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                   
                   // Preferences Card
                   if (_userData['preferences'] != null && (_userData['preferences'] as List).isNotEmpty) ...[
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(20.0),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF00432D),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Preferences',
-                            style: TextStyle(
-                              color: Color(0xFFE6FDD8),
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
+                    Consumer<ThemeProvider>(
+                      builder: (context, themeProvider, _) {
+                        return Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(20.0),
+                          decoration: BoxDecoration(
+                            color: themeProvider.cardColor,
+                            borderRadius: BorderRadius.circular(16),
                           ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Preferences',
+                                style: TextStyle(
+                                  color: themeProvider.textColor,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                           const SizedBox(height: 16),
                           Wrap(
                             spacing: 8,
@@ -1013,16 +1025,16 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                                         vertical: 6,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: const Color(0xFFE6FDD8).withOpacity(0.2),
+                                        color: themeProvider.textColor.withOpacity(0.2),
                                         borderRadius: BorderRadius.circular(20),
                                         border: Border.all(
-                                          color: const Color(0xFFE6FDD8).withOpacity(0.3),
+                                          color: themeProvider.textColor.withOpacity(0.3),
                                         ),
                                       ),
                                       child: Text(
                                         pref.toString(),
-                                        style: const TextStyle(
-                                          color: Color(0xFFE6FDD8),
+                                        style: TextStyle(
+                                          color: themeProvider.textColor,
                                           fontSize: 12,
                                         ),
                                       ),
@@ -1031,277 +1043,368 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                           ),
                         ],
                       ),
+                        );
+                      },
                     ),
                     const SizedBox(height: 20),
                   ],
                   
                   // Achievements Card
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(20.0),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF00432D),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Achievements',
-                          style: TextStyle(
-                            color: Color(0xFFE6FDD8),
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
+                  Consumer<ThemeProvider>(
+                    builder: (context, themeProvider, _) {
+                      return Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(20.0),
+                        decoration: BoxDecoration(
+                          color: themeProvider.cardColor,
+                          borderRadius: BorderRadius.circular(16),
                         ),
-                        const SizedBox(height: 16),
-                        ListTile(
-                          leading: const Icon(
-                            Icons.emoji_events,
-                            color: Color(0xFFE6FDD8),
-                            size: 24,
-                          ),
-                          title: const Text(
-                            'View Achievements',
-                            style: TextStyle(
-                              color: Color(0xFFE6FDD8),
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          subtitle: const Text(
-                            'Track your progress and unlock achievements',
-                            style: TextStyle(
-                              color: Color(0xFFE6FDD8),
-                              fontSize: 12,
-                            ),
-                          ),
-                          trailing: const Icon(
-                            Icons.arrow_forward_ios,
-                            color: Color(0xFFE6FDD8),
-                            size: 16,
-                          ),
-                          onTap: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (context) => const AchievementsScreen(),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Achievements',
+                              style: TextStyle(
+                                color: themeProvider.textColor,
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
                               ),
-                            );
-                          },
+                            ),
+                        const SizedBox(height: 16),
+                            ListTile(
+                              leading: Icon(
+                                Icons.emoji_events,
+                                color: themeProvider.textColor,
+                                size: 24,
+                              ),
+                              title: Text(
+                                'View Achievements',
+                                style: TextStyle(
+                                  color: themeProvider.textColor,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              subtitle: Text(
+                                'Track your progress and unlock achievements',
+                                style: TextStyle(
+                                  color: themeProvider.textColor,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              trailing: Icon(
+                                Icons.arrow_forward_ios,
+                                color: themeProvider.textColor,
+                                size: 16,
+                              ),
+                              onTap: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (context) => const AchievementsScreen(),
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
+                      );
+                    },
                   ),
                   const SizedBox(height: 20),
                   
                   // Security Settings Card
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(20.0),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF00432D),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Security Settings',
-                          style: TextStyle(
-                            color: Color(0xFFE6FDD8),
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
+                  Consumer<ThemeProvider>(
+                    builder: (context, themeProvider, _) {
+                      return Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(20.0),
+                        decoration: BoxDecoration(
+                          color: themeProvider.cardColor,
+                          borderRadius: BorderRadius.circular(16),
                         ),
-                        const SizedBox(height: 16),
-                        // Fingerprint Toggle
-                        if (_fingerprintAvailable) ...[
-                          Row(
-                            children: [
-                              const Icon(
-                                Icons.fingerprint,
-                                color: Color(0xFFE6FDD8),
-                                size: 24,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Security Settings',
+                              style: TextStyle(
+                                color: themeProvider.textColor,
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
                               ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text(
-                                      'Fingerprint Authentication',
-                                      style: TextStyle(
-                                        color: Color(0xFFE6FDD8),
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      _fingerprintEnabled 
-                                          ? 'Use your fingerprint to sign in quickly'
-                                          : 'Enable fingerprint authentication for faster sign-in',
-                                      style: TextStyle(
-                                        color: const Color(0xFFE6FDD8).withOpacity(0.7),
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              if (_isTogglingFingerprint)
-                                const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Color(0xFFE6FDD8),
+                            ),
+                            const SizedBox(height: 16),
+                            // Fingerprint Toggle
+                            if (_fingerprintAvailable) ...[
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.fingerprint,
+                                    color: themeProvider.textColor,
+                                    size: 24,
                                   ),
-                                )
-                              else
-                                Switch(
-                                  value: _fingerprintEnabled,
-                                  onChanged: _fingerprintAvailable ? (_) => _toggleFingerprint() : null,
-                                  activeColor: const Color(0xFFE6FDD8),
-                                  activeTrackColor: const Color(0xFFE6FDD8).withOpacity(0.3),
-                                  inactiveThumbColor: const Color(0xFFE6FDD8).withOpacity(0.5),
-                                  inactiveTrackColor: const Color(0xFFE6FDD8).withOpacity(0.1),
-                                ),
-                            ],
-                          ),
-                        ] else ...[
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.fingerprint,
-                                color: const Color(0xFFE6FDD8).withOpacity(0.5),
-                                size: 24,
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Fingerprint Authentication',
-                                      style: TextStyle(
-                                        color: const Color(0xFFE6FDD8).withOpacity(0.5),
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w600,
-                                      ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Fingerprint Authentication',
+                                          style: TextStyle(
+                                            color: themeProvider.textColor,
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          _fingerprintEnabled 
+                                              ? 'Use your fingerprint to sign in quickly'
+                                              : 'Enable fingerprint authentication for faster sign-in',
+                                          style: TextStyle(
+                                            color: themeProvider.textColor.withOpacity(0.7),
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      'Fingerprint authentication is not available on this device',
-                                      style: TextStyle(
-                                        color: const Color(0xFFE6FDD8).withOpacity(0.5),
-                                        fontSize: 12,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  if (_isTogglingFingerprint)
+                                    SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: themeProvider.textColor,
                                       ),
+                                    )
+                                  else
+                                    Switch(
+                                      value: _fingerprintEnabled,
+                                      onChanged: _fingerprintAvailable ? (_) => _toggleFingerprint() : null,
+                                      activeColor: themeProvider.textColor,
+                                      activeTrackColor: themeProvider.textColor.withOpacity(0.3),
+                                      inactiveThumbColor: themeProvider.textColor.withOpacity(0.5),
+                                      inactiveTrackColor: themeProvider.textColor.withOpacity(0.1),
                                     ),
-                                  ],
-                                ),
+                                ],
                               ),
-                              const SizedBox(width: 12),
-                              Switch(
-                                value: false,
-                                onChanged: null,
-                                activeColor: const Color(0xFFE6FDD8),
-                                activeTrackColor: const Color(0xFFE6FDD8).withOpacity(0.3),
-                                inactiveThumbColor: const Color(0xFFE6FDD8).withOpacity(0.3),
-                                inactiveTrackColor: const Color(0xFFE6FDD8).withOpacity(0.1),
+                            ] else ...[
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.fingerprint,
+                                    color: themeProvider.textColor.withOpacity(0.5),
+                                    size: 24,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Fingerprint Authentication',
+                                          style: TextStyle(
+                                            color: themeProvider.textColor.withOpacity(0.5),
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          'Fingerprint authentication is not available on this device',
+                                          style: TextStyle(
+                                            color: themeProvider.textColor.withOpacity(0.5),
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Switch(
+                                    value: false,
+                                    onChanged: null,
+                                    activeColor: themeProvider.textColor,
+                                    activeTrackColor: themeProvider.textColor.withOpacity(0.3),
+                                    inactiveThumbColor: themeProvider.textColor.withOpacity(0.3),
+                                    inactiveTrackColor: themeProvider.textColor.withOpacity(0.1),
+                                  ),
+                                ],
                               ),
                             ],
-                          ),
-                        ],
-                      ],
-                    ),
+                          ],
+                        ),
+                      );
+                    },
                   ),
                   const SizedBox(height: 20),
                   
                   // PIN Management Card
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(20.0),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF00432D),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'PIN Management',
-                          style: TextStyle(
-                            color: Color(0xFFE6FDD8),
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
+                  Consumer<ThemeProvider>(
+                    builder: (context, themeProvider, _) {
+                      return Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(20.0),
+                        decoration: BoxDecoration(
+                          color: themeProvider.cardColor,
+                          borderRadius: BorderRadius.circular(16),
                         ),
-                        const SizedBox(height: 16),
-                        ListTile(
-                          leading: const Icon(
-                            Icons.pin,
-                            color: Color(0xFFE6FDD8),
-                            size: 24,
-                          ),
-                          title: Text(
-                            _pinSet ? 'Change PIN' : 'Set Up PIN',
-                            style: const TextStyle(
-                              color: Color(0xFFE6FDD8),
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          subtitle: Text(
-                            _pinSet 
-                                ? 'Update your PIN for app authentication'
-                                : 'Create a PIN for secure app access',
-                            style: const TextStyle(
-                              color: Color(0xFFE6FDD8),
-                              fontSize: 12,
-                            ),
-                          ),
-                          trailing: const Icon(
-                            Icons.arrow_forward_ios,
-                            color: Color(0xFFE6FDD8),
-                            size: 16,
-                          ),
-                          onTap: _managePin,
-                        ),
-                        if (_pinSet) ...[
-                          const SizedBox(height: 8),
-                          ListTile(
-                            leading: const Icon(
-                              Icons.delete_outline,
-                              color: Colors.red,
-                              size: 24,
-                            ),
-                            title: const Text(
-                              'Remove PIN',
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'PIN Management',
                               style: TextStyle(
-                                color: Colors.red,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
+                                color: themeProvider.textColor,
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
-                            subtitle: const Text(
-                              'Remove PIN authentication from your account',
+                            const SizedBox(height: 16),
+                            ListTile(
+                              leading: Icon(
+                                Icons.pin,
+                                color: themeProvider.textColor,
+                                size: 24,
+                              ),
+                              title: Text(
+                                _pinSet ? 'Change PIN' : 'Set Up PIN',
+                                style: TextStyle(
+                                  color: themeProvider.textColor,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              subtitle: Text(
+                                _pinSet 
+                                    ? 'Update your PIN for app authentication'
+                                    : 'Create a PIN for secure app access',
+                                style: TextStyle(
+                                  color: themeProvider.textColor,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              trailing: Icon(
+                                Icons.arrow_forward_ios,
+                                color: themeProvider.textColor,
+                                size: 16,
+                              ),
+                              onTap: _managePin,
+                            ),
+                            if (_pinSet) ...[
+                              const SizedBox(height: 8),
+                              ListTile(
+                                leading: const Icon(
+                                  Icons.delete_outline,
+                                  color: Colors.red,
+                                  size: 24,
+                                ),
+                                title: const Text(
+                                  'Remove PIN',
+                                  style: TextStyle(
+                                    color: Colors.red,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                subtitle: const Text(
+                                  'Remove PIN authentication from your account',
+                                  style: TextStyle(
+                                    color: Colors.red,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                                trailing: const Icon(
+                                  Icons.arrow_forward_ios,
+                                  color: Colors.red,
+                                  size: 16,
+                                ),
+                                onTap: _removePin,
+                              ),
+                            ],
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 20),
+                  
+                  // Theme Settings Card
+                  Consumer<ThemeProvider>(
+                    builder: (context, outerThemeProvider, _) {
+                      return Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(20.0),
+                        decoration: BoxDecoration(
+                          color: outerThemeProvider.cardColor,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Appearance',
                               style: TextStyle(
-                                color: Colors.red,
-                                fontSize: 12,
+                                color: outerThemeProvider.textColor,
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
-                            trailing: const Icon(
-                              Icons.arrow_forward_ios,
-                              color: Colors.red,
-                              size: 16,
+                            const SizedBox(height: 16),
+                            Consumer<ThemeProvider>(
+                              builder: (context, themeProvider, _) {
+                                return Row(
+                                  children: [
+                                    Icon(
+                                      Icons.brightness_6,
+                                      color: outerThemeProvider.textColor,
+                                      size: 24,
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'Theme Mode',
+                                            style: TextStyle(
+                                              color: outerThemeProvider.textColor,
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            themeProvider.isDarkMode 
+                                                ? 'Dark Mode'
+                                                : 'Light Mode',
+                                            style: TextStyle(
+                                              color: outerThemeProvider.textColor.withOpacity(0.7),
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Switch(
+                                      value: !themeProvider.isDarkMode,
+                                      onChanged: (_) => themeProvider.toggleTheme(),
+                                      activeColor: outerThemeProvider.textColor,
+                                      activeTrackColor: outerThemeProvider.textColor.withOpacity(0.3),
+                                      inactiveThumbColor: outerThemeProvider.textColor.withOpacity(0.5),
+                                      inactiveTrackColor: outerThemeProvider.textColor.withOpacity(0.1),
+                                    ),
+                                  ],
+                                );
+                              },
                             ),
-                            onTap: _removePin,
-                          ),
-                        ],
-                      ],
-                    ),
+                          ],
+                        ),
+                      );
+                    },
                   ),
                   const SizedBox(height: 20),
                   
@@ -1330,6 +1433,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                 ],
               ),
             ),
+        );
+      },
     );
   }
 

@@ -7,6 +7,9 @@ import 'experiment_details_screen.dart';
 import '../widgets/experiment_details_modal.dart';
 import 'my_experiments_screen.dart';
 import 'qr_scanner_screen.dart';
+import '../utils/theme_colors.dart';
+import 'package:provider/provider.dart';
+import '../providers/theme_provider.dart';
 
 class HomepageScreen extends StatefulWidget {
   const HomepageScreen({super.key});
@@ -47,18 +50,20 @@ class _HomepageScreenState extends State<HomepageScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF201E1A),
+      backgroundColor: ThemeColors.backgroundColor(context),
       body: Column(
         children: [
           // Header Section
-          Container(
-            decoration: const BoxDecoration(
-              color: Color(0xFF00432D),
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(30),
-                bottomRight: Radius.circular(30),
-              ),
-            ),
+          Consumer<ThemeProvider>(
+            builder: (context, themeProvider, _) {
+              return Container(
+                decoration: BoxDecoration(
+                  color: themeProvider.headerColor,
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(30),
+                    bottomRight: Radius.circular(30),
+                  ),
+                ),
             child: SafeArea(
               child: Padding(
                 padding: const EdgeInsets.all(20.0),
@@ -69,10 +74,10 @@ class _HomepageScreenState extends State<HomepageScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
+                        Text(
                           'Explore the Lab',
                           style: TextStyle(
-                            color: Color(0xFFE6FDD8),
+                            color: themeProvider.headerTextColor,
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
                           ),
@@ -95,7 +100,7 @@ class _HomepageScreenState extends State<HomepageScreen> {
                               'assets/icons/qr-code.png',
                               width: 24,
                               height: 24,
-                              color: const Color(0xFFE6FDD8),
+                              color: themeProvider.headerTextColor,
                             ),
                           ),
                         ),
@@ -106,26 +111,29 @@ class _HomepageScreenState extends State<HomepageScreen> {
                     Container(
                       height: 50,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFEBFBD9).withOpacity(0.55),
+                        color: themeProvider.searchBarColor,
                         borderRadius: BorderRadius.circular(25),
                       ),
                       child: TextField(
                         controller: _searchCtrl,
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           hintText: 'Search experiments',
                           hintStyle: TextStyle(
-                            color: Color(0xFF1E4029),
+                            color: themeProvider.searchTextColor,
                             fontSize: 16,
                           ),
                           prefixIcon: Icon(
                             Icons.search,
-                            color: Color(0xFF1E4029),
+                            color: themeProvider.searchTextColor,
                           ),
                           border: InputBorder.none,
-                          contentPadding: EdgeInsets.symmetric(
+                          contentPadding: const EdgeInsets.symmetric(
                             horizontal: 20,
                             vertical: 15,
                           ),
+                        ),
+                        style: TextStyle(
+                          color: themeProvider.searchTextColor,
                         ),
                       ),
                     ),
@@ -134,55 +142,78 @@ class _HomepageScreenState extends State<HomepageScreen> {
                 ),
               ),
             ),
+              );
+            },
           ),
           // Main Content Area
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
-            child: SizedBox(
-              height: 36,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: _categories.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 8),
-                itemBuilder: (context, index) {
-                  final cat = _categories[index];
-                  final selected = _selectedCategory == cat;
-                  return GestureDetector(
-                    onTap: () => setState(() => _selectedCategory = selected ? null : cat),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: selected ? const Color(0xFFCDEDC6) : Colors.white.withOpacity(0.08),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: Colors.white.withOpacity(0.15)),
-                      ),
-                      child: Text(
-                        cat,
-                        style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 12),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
+          Consumer<ThemeProvider>(
+            builder: (context, themeProvider, _) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
+                child: SizedBox(
+                  height: 36,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: _categories.length,
+                    separatorBuilder: (_, __) => const SizedBox(width: 8),
+                    itemBuilder: (context, index) {
+                      final cat = _categories[index];
+                      final selected = _selectedCategory == cat;
+                      return GestureDetector(
+                        onTap: () => setState(() => _selectedCategory = selected ? null : cat),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: selected ? themeProvider.categorySelectedColor : themeProvider.categoryUnselectedColor.withOpacity(0.3),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: Colors.white.withOpacity(0.15)),
+                          ),
+                          child: Text(
+                            cat,
+                            style: TextStyle(
+                              color: themeProvider.isDarkMode 
+                                  ? Colors.white.withOpacity(0.9) 
+                                  : Colors.black.withOpacity(0.7),
+                              fontSize: 12
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              );
+            },
           ),
           Expanded(
             child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
               stream: _experimentsStream(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
+                  return Consumer<ThemeProvider>(
+                    builder: (context, themeProvider, _) {
+                      return Center(child: CircularProgressIndicator(color: themeProvider.buttonColor));
+                    },
+                  );
                 }
                 if (snapshot.hasError) {
-                  return Center(
-                    child: Text(
-                      'Failed to load experiments: ${snapshot.error}',
-                      style: const TextStyle(color: Colors.white),
-                    ),
+                  return Consumer<ThemeProvider>(
+                    builder: (context, themeProvider, _) {
+                      return Center(
+                        child: Text(
+                          'Failed to load experiments: ${snapshot.error}',
+                          style: TextStyle(color: themeProvider.textColor),
+                        ),
+                      );
+                    },
                   );
                 }
                 if (!snapshot.hasData) {
-                  return const Center(child: Text('No experiments', style: TextStyle(color: Colors.white)));
+                  return Consumer<ThemeProvider>(
+                    builder: (context, themeProvider, _) {
+                      return Center(child: Text('No experiments', style: TextStyle(color: themeProvider.textColor)));
+                    },
+                  );
                 }
                 final docs = snapshot.data!.docs;
                 final query = _searchCtrl.text.trim().toLowerCase();
@@ -202,28 +233,36 @@ class _HomepageScreenState extends State<HomepageScreen> {
                 filtered.shuffle(_random);
 
                 if (filtered.isEmpty) {
-                  return const Center(child: Text('No matching experiments', style: TextStyle(color: Colors.white)));
+                  return Consumer<ThemeProvider>(
+                    builder: (context, themeProvider, _) {
+                      return Center(child: Text('No matching experiments', style: TextStyle(color: themeProvider.textColor)));
+                    },
+                  );
                 }
 
-                return RefreshIndicator(
-                  onRefresh: _onRefresh,
-                  color: const Color(0xFFCDEDC6),
-                  backgroundColor: const Color(0xFF00432D),
-                  child: ListView.separated(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: filtered.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 12),
-                    itemBuilder: (context, index) {
-                      final doc = filtered[index];
-                      final data = doc.data();
-                      return _ExperimentCard(
-                        data: {
-                          'id': doc.id,
-                          ...data,
+                return Consumer<ThemeProvider>(
+                  builder: (context, themeProvider, _) {
+                    return RefreshIndicator(
+                      onRefresh: _onRefresh,
+                      color: themeProvider.categorySelectedColor,
+                      backgroundColor: themeProvider.headerColor,
+                      child: ListView.separated(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: filtered.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 12),
+                        itemBuilder: (context, index) {
+                          final doc = filtered[index];
+                          final data = doc.data();
+                          return _ExperimentCard(
+                            data: {
+                              'id': doc.id,
+                              ...data,
+                            },
+                          );
                         },
-                      );
-                    },
-                  ),
+                      ),
+                    );
+                  },
                 );
               },
             ),
@@ -271,32 +310,34 @@ class _ExperimentCard extends StatelessWidget {
         ? (emojis.length == 1 ? emojis.first : emojis.take(4).join(' '))
         : emoji;
 
-  return GestureDetector(
-      onTap: () => _navigateToExperimentDetails(context, data),
-      child: Container(
-        decoration: BoxDecoration(
-          color: const Color(0xFF00432D),
-          borderRadius: BorderRadius.circular(24),
-        ),
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Title across the top (left aligned)
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                title,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: Color(0xFFEDFDDE),
-                  fontSize: 39,
-                  fontWeight: FontWeight.w800,
-                  height: 1.2,
+  return Consumer<ThemeProvider>(
+    builder: (context, themeProvider, _) {
+      return GestureDetector(
+        onTap: () => _navigateToExperimentDetails(context, data),
+        child: Container(
+          decoration: BoxDecoration(
+            color: themeProvider.cardColor,
+            borderRadius: BorderRadius.circular(24),
+          ),
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Title across the top (left aligned)
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: themeProvider.textSecondaryColor,
+                    fontSize: 39,
+                    fontWeight: FontWeight.w800,
+                    height: 1.2,
+                  ),
                 ),
               ),
-            ),
             const SizedBox(height: 14),
             // Two columns: left emoji (square), right description
             Row(
@@ -333,8 +374,8 @@ class _ExperimentCard extends StatelessWidget {
                     desc,
                     maxLines: 6,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Color(0xFFEDFDDE),
+                    style: TextStyle(
+                      color: themeProvider.textSecondaryColor,
                       fontSize: 15,
                       height: 1.4,
                     ),
@@ -355,8 +396,8 @@ class _ExperimentCard extends StatelessWidget {
                   ),
                   child: Text(
                     data['category'],
-                    style: const TextStyle(
-                      color: Color(0xFFEDFDDE),
+                    style: TextStyle(
+                      color: themeProvider.textSecondaryColor,
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                     ),
@@ -367,6 +408,8 @@ class _ExperimentCard extends StatelessWidget {
         ),
       ),
     );
+    },
+  );
   }
 
   void _navigateToExperimentDetails(BuildContext context, Map<String, dynamic> data) {

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../widgets/custom_navigation_bar.dart';
 import '../screens/homepage_screen.dart';
 import '../screens/my_experiments_screen.dart';
 import '../screens/create_experiments_screen.dart';
 import '../screens/userprofile_screen.dart';
+import '../providers/theme_provider.dart';
 
 class GlobalNavigationWrapper extends StatefulWidget {
   final int initialIndex;
@@ -51,26 +53,30 @@ class _GlobalNavigationWrapperState extends State<GlobalNavigationWrapper> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF201E1A),
-      body: PageView(
-        controller: _pageController,
-        onPageChanged: (index) {
-          setState(() {
-            _selectedIndex = index;
-          });
-        },
-        children: const [
-          HomepageScreen(),
-          MyExperimentsScreen(),
-          CreateExperimentsScreen(),
-          UserProfileScreen(),
-        ],
-      ),
-      bottomNavigationBar: CustomNavigationBar(
-        selectedIndex: _selectedIndex,
-        onTap: _handleNavigation,
-      ),
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, _) {
+        return Scaffold(
+          backgroundColor: themeProvider.backgroundColor,
+          body: PageView(
+            controller: _pageController,
+            onPageChanged: (index) {
+              setState(() {
+                _selectedIndex = index;
+              });
+            },
+            children: const [
+              HomepageScreen(),
+              MyExperimentsScreen(),
+              CreateExperimentsScreen(),
+              UserProfileScreen(),
+            ],
+          ),
+          bottomNavigationBar: CustomNavigationBar(
+            selectedIndex: _selectedIndex,
+            onTap: _handleNavigation,
+          ),
+        );
+      },
     );
   }
 }
