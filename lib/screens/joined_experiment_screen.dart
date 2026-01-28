@@ -3,6 +3,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'my_experiments_screen.dart';
 import 'share_experiment_screen.dart';
+import '../services/notification_service.dart';
+import '../services/achievement_service.dart';
+import '../widgets/reminder_popup.dart';
+import '../widgets/experiment_analytics.dart';
 
 class JoinedExperimentScreen extends StatefulWidget {
   final String title;
@@ -28,11 +32,16 @@ class _JoinedExperimentScreenState extends State<JoinedExperimentScreen> {
   int _durationDays = 0;
   int _entriesCount = 0;
   DateTime? _lastEntryDate; // server recorded last date
+  bool _isReminderActive = false;
+  TimeOfDay? _reminderTime;
+  final NotificationService _notificationService = NotificationService();
+  final AchievementService _achievementService = AchievementService();
 
   @override
   void initState() {
     super.initState();
     _loadExperimentContext();
+    _loadReminderSettings();
   }
 
   Future<void> _loadExperimentContext() async {
@@ -77,6 +86,40 @@ class _JoinedExperimentScreenState extends State<JoinedExperimentScreen> {
       // ignore for now, UI will be minimal
     } finally {
       if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _loadReminderSettings() async {
+    try {
+      final isActive = await _notificationService.isReminderActive(widget.experimentId);
+      final time = await _notificationService.getReminderTime(widget.experimentId);
+      
+      if (mounted) {
+        setState(() {
+          _isReminderActive = isActive;
+          _reminderTime = time;
+        });
+      }
+    } catch (e) {
+      // Handle error silently
+    }
+  }
+
+  Future<void> _showReminderPopup() async {
+    final result = await showDialog<bool>(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => ReminderPopup(
+        experimentId: widget.experimentId,
+        experimentTitle: widget.title,
+        isReminderActive: _isReminderActive,
+        currentReminderTime: _reminderTime,
+      ),
+    );
+
+    if (result == true && mounted) {
+      // Reload reminder settings after applying
+      await _loadReminderSettings();
     }
   }
 
@@ -138,6 +181,9 @@ class _JoinedExperimentScreenState extends State<JoinedExperimentScreen> {
 
       await batch.commit();
 
+      // Cancel any active reminders for this experiment
+      await _notificationService.cancelReminder(widget.experimentId);
+
       if (!mounted) return;
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (context) => const MyExperimentsScreen()),
@@ -160,8 +206,8 @@ class _JoinedExperimentScreenState extends State<JoinedExperimentScreen> {
       backgroundColor: const Color(0xFF00432D),
       body: SafeArea(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Fixed top bar with back button and action buttons
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
               child: Row(
@@ -201,132 +247,144 @@ class _JoinedExperimentScreenState extends State<JoinedExperimentScreen> {
                     },
                   ),
                   const SizedBox(width: 12),
-                  // Bell icon (bell.png)
-                  _TopIconButton(assetPath: 'assets/icons/bell.png'),
+                  // Bell icon (bell.png) with active state indicator
+                  _TopIconButton(
+                    assetPath: 'assets/icons/bell.png',
+                    onTap: _showReminderPopup,
+                    isActive: _isReminderActive,
+                  ),
                 ],
               ),
             ),
 
-            // Title and emoji image area
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 8),
-                  Text(
-                    widget.title,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 32,
-                      fontWeight: FontWeight.w800,
-                      height: 1.15,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              widget.description,
-                              style: TextStyle(
-                                color: Colors.white.withOpacity(0.9),
-                                fontSize: 16,
-                                height: 1.45,
-                              ),
+            // Scrollable content area
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Title and emoji image area
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 8),
+                          Text(
+                            widget.title,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 32,
+                              fontWeight: FontWeight.w800,
+                              height: 1.15,
                             ),
-                            const SizedBox(height: 16),
-                            Row(
-                              children: [
-                                // Leave Experiment button
-                                ElevatedButton(
-                                  onPressed: _isLeaving ? null : _confirmAndLeave,
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFFFF875F),
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                                  ),
-                                  child: _isLeaving
-                                      ? const SizedBox(
-                                          width: 18,
-                                          height: 18,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                          const SizedBox(height: 16),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      widget.description,
+                                      style: TextStyle(
+                                        color: Colors.white.withOpacity(0.9),
+                                        fontSize: 16,
+                                        height: 1.45,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 16),
+                                    Wrap(
+                                      spacing: 12,
+                                      runSpacing: 8,
+                                      children: [
+                                        // Leave Experiment button
+                                        ElevatedButton(
+                                          onPressed: _isLeaving ? null : _confirmAndLeave,
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: const Color(0xFFFF875F),
+                                            foregroundColor: Colors.white,
+                                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                                           ),
-                                        )
-                                      : const Text(
-                                          'Leave Experiment',
-                                          style: TextStyle(fontWeight: FontWeight.w700),
+                                          child: _isLeaving
+                                              ? const SizedBox(
+                                                  width: 18,
+                                                  height: 18,
+                                                  child: CircularProgressIndicator(
+                                                    strokeWidth: 2,
+                                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                                  ),
+                                                )
+                                              : const Text(
+                                                  'Leave Experiment',
+                                                  style: TextStyle(fontWeight: FontWeight.w700),
+                                                ),
                                         ),
+                                        // Add daily entry button
+                                        ElevatedButton(
+                                          onPressed: (!_isLoading && canAdd) ? _openDailyEntryDialog : _handleAddDisabled,
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: const Color(0xFFCDEDC6),
+                                            foregroundColor: const Color(0xFF00432D),
+                                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                          ),
+                                          child: Text(
+                                            _entriesCount >= _durationDays && _durationDays > 0
+                                                ? 'Completed'
+                                                : 'Add daily entry',
+                                            style: const TextStyle(fontWeight: FontWeight.w700),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
                                 ),
-                                const SizedBox(width: 12),
-                                // Add daily entry button (unstyled action for now)
-                                ElevatedButton(
-                                  onPressed: (!_isLoading && canAdd) ? _openDailyEntryDialog : _handleAddDisabled,
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFFCDEDC6),
-                                    foregroundColor: const Color(0xFF00432D),
-                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                                  ),
-                                  child: Text(
-                                    _entriesCount >= _durationDays && _durationDays > 0
-                                        ? 'Completed'
-                                        : 'Add daily entry',
-                                    style: const TextStyle(fontWeight: FontWeight.w700),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
+                              ),
+                              const SizedBox(width: 16),
+                              // Runner emoji image placeholder to resemble wireframe
+                              const Text(
+                                '🏃‍♂️',
+                                style: TextStyle(fontSize: 84),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    // Analytics heading
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                      child: Text(
+                        'Analytics',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.95),
+                          fontSize: 28,
+                          fontWeight: FontWeight.w800,
                         ),
                       ),
-                      const SizedBox(width: 16),
-                      // Runner emoji image placeholder to resemble wireframe
-                      const Text(
-                        '🏃‍♂️',
-                        style: TextStyle(fontSize: 84),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
+                    ),
+                    const SizedBox(height: 12),
 
-            const SizedBox(height: 20),
-
-            // Analytics heading (section not implemented per request)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0),
-              child: Text(
-                'Analytics',
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.95),
-                  fontSize: 28,
-                  fontWeight: FontWeight.w800,
+                    // Analytics section with dynamic charts
+                    ExperimentAnalytics(
+                      experimentId: widget.experimentId,
+                      fields: _fields,
+                      durationDays: _durationDays,
+                    ),
+                    
+                    // Add bottom padding for better scrolling experience
+                    const SizedBox(height: 20),
+                  ],
                 ),
               ),
             ),
-            const SizedBox(height: 12),
-
-            // Placeholder space for analytics chart
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0),
-              child: Container(
-                height: 180,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.06),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-              ),
-            ),
-            const Spacer(),
           ],
         ),
       ),
@@ -543,12 +601,18 @@ class _JoinedExperimentScreenState extends State<JoinedExperimentScreen> {
       });
 
       if (_durationDays > 0 && _entriesCount >= _durationDays) {
+        // Cancel reminder when experiment is completed
+        await _notificationService.cancelReminder(widget.experimentId);
+        await _loadReminderSettings(); // Update UI state
         await _showFinishedDialog();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Daily entry added.')),
         );
       }
+      
+      // Check for achievements after adding entry
+      _achievementService.checkAndUnlockAchievements(context: context);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Failed to add entry. Please try again.')),
@@ -585,7 +649,8 @@ class _JoinedExperimentScreenState extends State<JoinedExperimentScreen> {
 class _TopIconButton extends StatelessWidget {
   final String assetPath;
   final VoidCallback? onTap;
-  const _TopIconButton({required this.assetPath, this.onTap});
+  final bool isActive;
+  const _TopIconButton({required this.assetPath, this.onTap, this.isActive = false});
 
   @override
   Widget build(BuildContext context) {
@@ -594,15 +659,39 @@ class _TopIconButton extends StatelessWidget {
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.08),
+          color: isActive 
+              ? const Color(0xFFCDEDC6).withOpacity(0.2)
+              : Colors.white.withOpacity(0.08),
           borderRadius: BorderRadius.circular(12),
+          border: isActive 
+              ? Border.all(color: const Color(0xFFCDEDC6), width: 1)
+              : null,
         ),
         padding: const EdgeInsets.all(10),
-        child: Image.asset(
-          assetPath,
-          width: 22,
-          height: 22,
-          color: const Color(0xFFCDEDC6),
+        child: Stack(
+          children: [
+            Image.asset(
+              assetPath,
+              width: 22,
+              height: 22,
+              color: isActive 
+                  ? const Color(0xFFCDEDC6)
+                  : const Color(0xFFCDEDC6).withOpacity(0.7),
+            ),
+            if (isActive)
+              Positioned(
+                right: 0,
+                top: 0,
+                child: Container(
+                  width: 8,
+                  height: 8,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFCDEDC6),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
     );
